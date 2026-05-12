@@ -1,0 +1,29 @@
+{
+  "_description": "Edit a copy (e.g. my_targets.json). Pass to tune_engine_holdout.py --targets my_targets.json  All *_pct are fractions (0.08 = 8%).",
+  "train_must": {
+    "forbid_halted": true,
+    "min_trades": 30,
+    "max_dd_pct": 0.12,
+    "min_profit_factor": 1.05,
+    "min_win_rate": 0.45,
+    "max_win_rate": 0.72,
+    "min_avg_R": -0.05,
+    "min_pnl_total_pct": null
+  },
+  "holdout_should": {
+    "min_trades": 12,
+    "max_dd_pct": 0.15,
+    "min_profit_factor": 1.0,
+    "min_win_rate": 0.42,
+    "max_win_rate": null,
+    "forbid_halted": true
+  },
+  "objective": {
+    "w_pf": 0.7,
+    "w_avg_r": 0.25,
+    "w_win_rate": 0.05,
+    "w_pnl_pct": 0.0,
+    "penalize_dd_above": 0.08,
+    "dd_penalty_per_pct": 2.0
+  }
+}

@@ -1,0 +1,9 @@
+*.csv
+*.npz
+*.parquet
+*.pt
+*.onnx
+runs/
+logs/
+__pycache__/
+.DS_Store
