@@ -224,6 +224,13 @@ def train(args):
         class_weights=None,
     )
     print(f"[train] CE class weights (short,noisy,long): {list(CE_CLASS_WEIGHTS)}")
+    lc = loss_fn.cfg
+    print(
+        f"[train] loss extras: asymmetric_gamma={lc.asymmetric_gamma} "
+        f"(on={not args.no_asymmetric_loss}); "
+        f"short_long_lean thr={lc.short_long_lean_prob_threshold} gamma={lc.short_long_lean_gamma} "
+        f"(on={lc.use_short_long_lean_penalty})"
+    )
     optim = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=1e-4)
 
     # Output dir
