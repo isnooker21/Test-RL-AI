@@ -2,10 +2,10 @@
 Specialist loss: CE + regression with asymmetric penalties.
 ============================================================
 
-LossConfig + SpecialistLoss (v7):
-    CE (optional class weights, label smoothing, ignore_index=-1)
-    + asymmetric sample weights on directional false positives (gamma default 1.5)
-    + regression: SmoothL1 or Gaussian NLL with wrong-sign emphasis.
+LossConfig + SpecialistLoss:
+    - CE class weights [1.7, 1.0, 1.0] (short, noisy, long) to reduce long-bias / lift short learning.
+    - cls_weight=1.0, reg_weight=0.1 — emphasize directional hit over move magnitude.
+    - Asymmetric wrong-direction (gamma) + extra penalty when y=short but P(long) is high (soft lean).
 """
 
 from __future__ import annotations
@@ -15,24 +15,37 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+# CrossEntropy per-class weights: class 0=short, 1=noisy, 2=long
+CE_CLASS_WEIGHTS: tuple[float, float, float] = (1.7, 1.0, 1.0)
+
 
 @dataclass
 class LossConfig:
     cls_weight: float = 1.0
     reg_weight: float = 0.10
-    use_class_weights: bool = False
+    use_class_weights: bool = True
     label_smoothing: float = 0.05
     reg_loss: str = "smooth_l1"  # or "nll"
     huber_beta: float = 0.5
     use_asymmetric_loss: bool = True
     asymmetric_gamma: float = 1.5
+    # When label is short (0) but model mass on long (2) is high, upweight CE (fixes long-bias).
+    use_short_long_lean_penalty: bool = True
+    short_long_lean_prob_threshold: float = 0.45
+    short_long_lean_gamma: float = 1.85
 
 
 class SpecialistLoss(nn.Module):
     def __init__(self, cfg: LossConfig, class_weights: torch.Tensor | None = None):
         super().__init__()
         self.cfg = cfg
-        self.class_weights = class_weights
+        if class_weights is None:
+            w = torch.tensor(CE_CLASS_WEIGHTS, dtype=torch.float32)
+        else:
+            w = class_weights.detach().float().view(-1)
+            if w.numel() != 3:
+                raise ValueError("class_weights must have length 3 [short, noisy, long]")
+        self.register_buffer("_class_weight", w)
 
     def forward(
         self,
@@ -44,10 +57,11 @@ class SpecialistLoss(nn.Module):
         logits = out["logits"]
         mu = out["mu"]
 
+        cw = self._class_weight.to(device=logits.device, dtype=logits.dtype)
         ce_vec = F.cross_entropy(
             logits,
             y_cls,
-            weight=self.class_weights if cfg.use_class_weights else None,
+            weight=cw if cfg.use_class_weights else None,
             label_smoothing=cfg.label_smoothing,
             reduction="none",
             ignore_index=-1,
@@ -58,6 +72,15 @@ class SpecialistLoss(nn.Module):
             fp_dir = ((pred == 2) & (y_cls == 0)) | ((pred == 0) & (y_cls == 2))
             ce_w = torch.where(fp_dir, ce_vec.new_tensor(cfg.asymmetric_gamma), ce_vec.new_tensor(1.0))
             ce_vec = ce_vec * ce_w
+        if cfg.use_short_long_lean_penalty and cfg.short_long_lean_gamma != 1.0:
+            probs = F.softmax(logits, dim=-1)
+            p_long = probs[:, 2]
+            lean_wrong = (y_cls == 0) & (p_long >= cfg.short_long_lean_prob_threshold)
+            ce_vec = ce_vec * torch.where(
+                lean_wrong,
+                ce_vec.new_tensor(cfg.short_long_lean_gamma),
+                ce_vec.new_tensor(1.0),
+            )
         ce_denom = valid_cls.sum().clamp_min(1).to(ce_vec.dtype)
         ce = (ce_vec * valid_cls.float()).sum() / ce_denom
 

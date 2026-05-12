@@ -3,7 +3,7 @@ Train the Physics Specialist (Stage 4D)
 ========================================
 
 Supervised training:
-    - Loss = CE(class) + λ·reg(μ)  (λ default 0.1; CE unweighted, asymmetric FP penalty on)
+    - Loss = λ_cls·CE + λ_reg·reg(μ)  (defaults 1.0 / 0.1; CE weights [1.7,1,1] short-heavy + asymmetric + short/long-lean)
     - Optimiser: AdamW + cosine LR
     - Time-based train / val split (already in dataset)
 
@@ -38,6 +38,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader, WeightedRandomSampler
 
+from losses import CE_CLASS_WEIGHTS
 from physics_specialist import PhysicsSpecialist, SpecialistConfig, SpecialistLoss, LossConfig
 
 
@@ -168,7 +169,7 @@ def train(args):
     print(f"[train] dataset: train={len(train_idx):,}  val={len(val_idx):,}  "
           f"window={window}  features={n_features}")
 
-    # Class counts (informational; CE uses uniform weights — neutral bias, asymmetric FP penalty on)
+    # Class counts (informational; CE uses losses.CE_CLASS_WEIGHTS when use_class_weights=True)
     cls_counts = np.bincount(z["y_cls"][train_idx].astype(np.int64), minlength=3).astype(np.float64)
     cls_frac = cls_counts / max(1.0, cls_counts.sum())
     print(f"[train] class counts: {cls_counts.astype(int).tolist()}  frac={cls_frac.round(3).tolist()}")
@@ -214,7 +215,7 @@ def train(args):
         LossConfig(
             cls_weight=1.0,
             reg_weight=args.reg_weight,
-            use_class_weights=False,
+            use_class_weights=True,
             reg_loss=args.reg_loss,
             huber_beta=args.huber_beta,
             use_asymmetric_loss=not args.no_asymmetric_loss,
@@ -222,6 +223,7 @@ def train(args):
         ),
         class_weights=None,
     )
+    print(f"[train] CE class weights (short,noisy,long): {list(CE_CLASS_WEIGHTS)}")
     optim = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=1e-4)
 
     # Output dir

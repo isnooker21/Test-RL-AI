@@ -164,8 +164,9 @@ def simulate_long_short_R_path(
 
     Friction matches backtest_specialist.run_backtest + TradeRules:
       - R_unit_price at entry t: ATR[t] * max(sl_atr_mult, 0.1)
-      - Entry/horizon exit: adverse_fill_*  (half-spread + slippage_atr_frac*ATR)
-      - SL exit: fill at SL minus direction * slippage_atr_frac * ATR[exit_bar]
+      - Entry at t: half-spread + slippage_atr_frac * ATR[t] (adverse side via _fill_entry_vec).
+      - Horizon exit at t+H: half-spread + slippage_atr_frac * ATR[t+H] (_fill_exit_vec).
+      - SL exit: stop price ± slippage_atr_frac * ATR[stop_bar] (same slip model as backtest).
 
     spread must be length n (typically df['spread_mean']); see _spread_price_per_bar.
     """

@@ -63,8 +63,8 @@ class TradeRules:
     daily_loss_cap: float = 0.020
     weekly_loss_cap: float = 0.050
     max_drawdown:   float = 0.100
-    dir_prob_min:   float = 0.30
-    dir_ratio_min:  float = 1.10
+    dir_prob_min:   float = 0.46
+    dir_ratio_min:  float = 1.15
     rr_min:         float = 0.0
     conf_threshold: float = 0.0
     # Skip bars where the “noisy / uncertain” class dominates.
@@ -745,9 +745,9 @@ def main():
                     help="(secondary) max-class probability threshold; 0 disables")
     ap.add_argument("--rr-min",    type=float, default=0.0,
                     help="(secondary) min predicted R:R from regression head; 0 disables")
-    ap.add_argument("--dir-prob",  type=float, default=0.30,
+    ap.add_argument("--dir-prob",  type=float, default=0.46,
                     help="primary directional filter: P(winning_dir) ≥ this")
-    ap.add_argument("--dir-ratio", type=float, default=1.10,
+    ap.add_argument("--dir-ratio", type=float, default=1.15,
                     help="primary: P(win)/P(lose) ≥ this")
     ap.add_argument("--sl-atr-mult", type=float, default=1.5,
                     help="initial SL distance = this × ATR (1 R = full risk)")

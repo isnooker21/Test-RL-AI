@@ -188,7 +188,7 @@ def train_model_quick(
         LossConfig(
             cls_weight=1.0,
             reg_weight=0.10,
-            use_class_weights=False,
+            use_class_weights=True,
             reg_loss=reg_loss,
             huber_beta=huber_beta,
             use_asymmetric_loss=use_asymmetric_loss,
