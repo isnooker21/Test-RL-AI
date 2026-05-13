@@ -218,7 +218,7 @@ def train(args):
             use_class_weights=True,
             reg_loss=args.reg_loss,
             huber_beta=args.huber_beta,
-            use_asymmetric_loss=not args.no_asymmetric_loss,
+            use_asymmetric_loss=args.asymmetric_loss and not args.no_asymmetric_loss,
             asymmetric_gamma=args.asymmetric_gamma,
         ),
         class_weights=None,
@@ -227,7 +227,7 @@ def train(args):
     lc = loss_fn.cfg
     print(
         f"[train] loss extras: asymmetric_gamma={lc.asymmetric_gamma} "
-        f"(on={not args.no_asymmetric_loss}); "
+        f"(on={args.asymmetric_loss and not args.no_asymmetric_loss}); "
         f"short_long_lean thr={lc.short_long_lean_prob_threshold} gamma={lc.short_long_lean_gamma} "
         f"(on={lc.use_short_long_lean_penalty})"
     )
@@ -443,8 +443,12 @@ def main():
     ap.add_argument("--workers",   type=int, default=0)
     ap.add_argument("--device",    default="auto", choices=["auto", "cpu", "cuda", "mps"])
     ap.add_argument("--balanced-sampler", action="store_true")
-    ap.add_argument("--asymmetric-gamma", type=float, default=1.25)
-    ap.add_argument("--no-asymmetric-loss", action="store_true")
+    ap.add_argument("--asymmetric-loss", action="store_true",
+                    help="Enable asymmetric CE/reg penalty (default: off for simpler loss)")
+    ap.add_argument("--no-asymmetric-loss", action="store_true",
+                    help="Force asymmetric penalty off (redundant if already default off)")
+    ap.add_argument("--asymmetric-gamma", type=float, default=1.25,
+                    help="Multiplier when asymmetric loss is enabled")
     ap.add_argument(
         "--early-stopping-patience",
         type=int,

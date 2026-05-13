@@ -179,7 +179,7 @@ def train_model_quick(
     wf_seed: int = 42,
     fold_idx: int = 1,
     asymmetric_gamma: float = 1.25,
-    use_asymmetric_loss: bool = True,
+    use_asymmetric_loss: bool = False,
 ) -> tuple[PhysicsSpecialist, dict]:
     cfg = SpecialistConfig(n_features=n_features, window=window)
     model = PhysicsSpecialist(cfg).to(device)
@@ -452,7 +452,10 @@ def main():
     )
     ap.add_argument("--asymmetric-gamma", type=float, default=1.25,
                     help="v7.2: penalty on directional FP (CE + mis-signed μ)")
-    ap.add_argument("--no-asymmetric-loss", action="store_true")
+    ap.add_argument("--asymmetric-loss", action="store_true",
+                    help="Enable asymmetric loss in WF inner training (default: off)")
+    ap.add_argument("--no-asymmetric-loss", action="store_true",
+                    help="Force asymmetric loss off")
     ap.add_argument("--device", choices=("auto", "cpu", "mps", "cuda"), default="auto",
                     help="training device selection (auto prefers CUDA, then MPS, then CPU)")
     args = ap.parse_args()
@@ -545,11 +548,9 @@ def main():
         f"spread_max={args.spread_max_quote:.4f}  spread/atr_max={args.spread_atr_max_ratio:.3f}  "
         f"atr_z=[{args.atr_z_min:.2f},{args.atr_z_max:.2f}]")
     stress_on = not args.no_stress_spread_bt
+    asym_on = args.asymmetric_loss and not args.no_asymmetric_loss
     log(f"[wf] v7: stress_spread_checkpoint_BT={stress_on}  asymmetric_loss="
-        f"{not args.no_asymmetric_loss}  gamma={args.asymmetric_gamma}")
-    stress_on = not args.no_stress_spread_bt
-    log(f"[wf] v7: stress_spread_checkpoint_BT={stress_on}  asymmetric_loss="
-        f"{not args.no_asymmetric_loss}  gamma={args.asymmetric_gamma}")
+        f"{asym_on}  gamma={args.asymmetric_gamma}")
 
     for k, (ts, te, vs, ve) in enumerate(fold_specs, start=1):
         log(f"\n──────── FOLD {k} ────────")
@@ -579,7 +580,7 @@ def main():
             wf_seed=args.seed,
             fold_idx=k,
             asymmetric_gamma=args.asymmetric_gamma,
-            use_asymmetric_loss=not args.no_asymmetric_loss,
+            use_asymmetric_loss=args.asymmetric_loss and not args.no_asymmetric_loss,
         )
         log(f"   train pick: {train_info.get('checkpoint_criterion', '?')}  "
             f"{train_info.get('val_bt_pick', {})}")
