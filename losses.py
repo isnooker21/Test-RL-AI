@@ -1,5 +1,5 @@
 """
-Specialist loss: CE + regression with asymmetric penalties.
+Specialist loss: CE + regression with optional asymmetric penalties.
 ============================================================
 
 LossConfig + SpecialistLoss:
