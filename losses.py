@@ -16,8 +16,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 # CrossEntropy per-class weights: class 0=short, 1=noisy, 2=long (higher = more loss on that true label)
-# Up weighted > Short after pred_up collapse on val; tune with analyze_label_distribution.py
-CE_CLASS_WEIGHTS: tuple[float, float, float] = (1.35, 1.0, 1.85)
+# From analyze_label_distribution.py on dataset_scalp_v1 train + --up-boost 1.35 (inverse-freq renorm).
+CE_CLASS_WEIGHTS: tuple[float, float, float] = (1.06, 0.55, 1.39)
 
 
 @dataclass
