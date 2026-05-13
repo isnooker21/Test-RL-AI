@@ -3,7 +3,7 @@ Specialist loss: CE + regression with asymmetric penalties.
 ============================================================
 
 LossConfig + SpecialistLoss:
-    - CE class weights (short, noisy, long): emphasize rare-class gradients; Up boosted vs collapse.
+    - CE class weights (short, noisy, long): balanced mild emphasis on long vs noisy.
     - cls_weight=1.0, reg_weight=0.1 — emphasize directional hit over move magnitude.
     - Asymmetric wrong-direction (gamma) + extra penalty when y=short but P(long) is high (soft lean).
 """
@@ -15,9 +15,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-# CrossEntropy per-class weights: class 0=short, 1=noisy, 2=long (higher = more loss on that true label)
-# From analyze_label_distribution.py on dataset_scalp_v1 train + --up-boost 1.35 (inverse-freq renorm).
-CE_CLASS_WEIGHTS: tuple[float, float, float] = (1.06, 0.55, 1.39)
+# CrossEntropy per-class weights: class 0=short, 1=noisy, 2=long (balanced mild up-weight)
+CE_CLASS_WEIGHTS: tuple[float, float, float] = (1.0, 0.8, 1.1)
 
 
 @dataclass
@@ -29,7 +28,7 @@ class LossConfig:
     reg_loss: str = "smooth_l1"  # or "nll"
     huber_beta: float = 0.5
     use_asymmetric_loss: bool = True
-    asymmetric_gamma: float = 1.5
+    asymmetric_gamma: float = 1.25
     # When label is short (0) but model mass on long (2) is high, upweight CE (fixes long-bias).
     use_short_long_lean_penalty: bool = True
     short_long_lean_prob_threshold: float = 0.45

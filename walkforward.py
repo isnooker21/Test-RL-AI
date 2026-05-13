@@ -178,7 +178,7 @@ def train_model_quick(
     stress_spread_bt: bool = True,
     wf_seed: int = 42,
     fold_idx: int = 1,
-    asymmetric_gamma: float = 1.5,
+    asymmetric_gamma: float = 1.25,
     use_asymmetric_loss: bool = True,
 ) -> tuple[PhysicsSpecialist, dict]:
     cfg = SpecialistConfig(n_features=n_features, window=window)

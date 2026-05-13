@@ -3,7 +3,7 @@ Train the Physics Specialist (Stage 4D)
 ========================================
 
 Supervised training:
-    - Loss = λ_cls·CE + λ_reg·reg(μ)  (defaults 1.0 / 0.1; CE weights [1.7,1,1] short-heavy + asymmetric + short/long-lean)
+    - Loss = λ_cls·CE + λ_reg·reg(μ)  (CE weights balanced; asymmetric gamma softened default 1.25)
     - Optimiser: AdamW + cosine LR
     - Time-based train / val split (already in dataset)
 
@@ -443,7 +443,7 @@ def main():
     ap.add_argument("--workers",   type=int, default=0)
     ap.add_argument("--device",    default="auto", choices=["auto", "cpu", "cuda", "mps"])
     ap.add_argument("--balanced-sampler", action="store_true")
-    ap.add_argument("--asymmetric-gamma", type=float, default=1.5)
+    ap.add_argument("--asymmetric-gamma", type=float, default=1.25)
     ap.add_argument("--no-asymmetric-loss", action="store_true")
     ap.add_argument(
         "--early-stopping-patience",
